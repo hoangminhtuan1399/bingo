@@ -1,11 +1,11 @@
 function countTotal(totalArr, results) {
     const res = [];
-    let count = 0;
+    let count = 1;
     results.forEach(({ winningResult }, index) => {
         const total = getTotal(winningResult).toString();
         if (totalArr.includes(total) || index === results.length - 1) {
             res.push({ count, index });
-            count = 0;
+            count = 1;
         } else {
             count++;
         }
@@ -15,14 +15,14 @@ function countTotal(totalArr, results) {
 
 function countTriple(tripleArr, results) {
     const res = [];
-    let count = 0;
+    let count = 1;
     results.forEach(({ winningResult }, index) => {
         const isTriple = checkTriple(winningResult);
         if (isTriple) {
             const num = winningResult.toString()[0];
             if (!tripleArr || !tripleArr.length || tripleArr.includes(num)) {
                 res.push({ count, index });
-                count = 0;
+                count = 1;
             } else {
                 count++;
             }
@@ -30,7 +30,7 @@ function countTriple(tripleArr, results) {
             res.push({
                 count, index
             });
-            count = 0;
+            count = 1;
         } else {
             count++;
         }

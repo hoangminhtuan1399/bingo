@@ -34,3 +34,27 @@ function getValues() {
     if (!document.querySelector('#check-value').value) return [];
     return document.querySelector('#check-value').value.split(', ');
 }
+
+function handleGetStatistic() {
+    const res = statistics.filter(({ playType }) => {
+        return true
+    }).map(({ playType, countUserBought, amount }) => {
+        return {
+            playType,
+            amount,
+            countUserBought,
+            ratio: amount / countUserBought
+        };
+    }).sort((a, b) => {
+        const nameA = a.playType.toLowerCase();
+        const nameB = b.playType.toLowerCase();
+        if (nameA < nameB) {
+            return -1;
+        }
+        if (nameA > nameB) {
+            return 1;
+        }
+        return 0;
+    });
+    console.log(res);
+}
