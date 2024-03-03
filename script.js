@@ -171,10 +171,33 @@ function calculatePayMoney(multiplier, count) {
     }
 }
 
-console.log(calculatePayMoney(40, 90));
+function calculateProfit(countList, multiplier, min, max) {
+    const payCount = max - min;
+    const statistic = calculatePayMoney(multiplier, payCount);
+    const maxLoss = statistic.totalPay;
+    const payList = statistic.payList;
+    let winning = 0;
+    let losing = 0;
+    countList.forEach(count => {
+        if (count < min) return;
+        if (count >= max) {
+            losing += maxLoss;
+            return;
+        }
+        const index = count - min;
+        winning += payList[index].winning;
+    });
+    return {
+        winning,
+        losing,
+        total: winning - losing
+    }
+}
+
 const tempArr = countTotal([17], allResults);
 const arr = tempArr.map(({ count }) => count);
 arr.pop();
 console.log(tempArr);
 console.log(arr);
 console.log(getStandardDeviation(arr));
+console.log(calculateProfit(arr, 40, 0, 202));
