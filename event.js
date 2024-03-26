@@ -19,6 +19,12 @@ function handleGetOnlineTotal() {
     });
 }
 
+function handleGetOfflineTotal() {
+    const arr = getValues();
+    const counts = countTotal(arr, allResults);
+    console.log(counts);
+}
+
 function handleGetOnlineTriple() {
     fetch(fetchUrl, fetchOptions).then(res => {
         res.json().then(res => {
@@ -28,6 +34,12 @@ function handleGetOnlineTriple() {
             console.log(counts);
         });
     });
+}
+
+function handleGetOfflineTriple() {
+    const arr = getValues();
+    const counts = countTriple(arr, allResults);
+    console.log(counts);
 }
 
 function getValues() {

@@ -193,11 +193,3 @@ function calculateProfit(countList, multiplier, min, max) {
         total: winning - losing
     }
 }
-
-const tempArr = countTotal([17], allResults);
-const arr = tempArr.map(({ count }) => count);
-arr.pop();
-console.log(tempArr);
-console.log(arr);
-console.log(getStandardDeviation(arr));
-console.log(calculateProfit(arr, 40, 0, 202));
