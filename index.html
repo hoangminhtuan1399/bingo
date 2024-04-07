@@ -1,27 +1,33 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
-<div>
-    <h2>Count result</h2>
-    <label for="check-value">Value</label>
-    <input type="text" id="check-value">
-    <button onclick="handleGetOnlineTotal()">Get onl total</button>
-    <button onclick="handleGetOfflineTotal()">Get off total</button>
-    <button onclick="handleGetOnlineTriple()">Get onl triple</button>
-    <button onclick="handleGetOfflineTriple()">Get off triple</button>
-    <h2>Get statistic</h2>
-    <button onclick="handleGetStatistic()">Get statisic</button>
-</div>
-</body>
-<script src="result_1.js"></script>
-<script src="result_2.js"></script>
-<script src="result_3.js"></script>
-<script src="result_4.js"></script>
-<script src="results.js"></script>
-<script src="script.js"></script>
-<script src="event.js"></script>
+    <head>
+        <meta charset="UTF-8" />
+        <title>Title</title>
+    </head>
+    <body>
+        <div>
+            <h2>Count result</h2>
+            <div>
+                <label for="check-value">Value</label>
+                <input type="text" id="check-value" />
+                <button onclick="handleGetOnlineTotal()">Get onl total</button>
+                <button onclick="handleGetOfflineTotal()">Get off total</button>
+                <button onclick="handleGetOnlineTriple()">Get onl triple</button>
+                <button onclick="handleGetOfflineTriple()">Get off triple</button>
+                <h2>Get statistic</h2>
+                <button onclick="handleGetStatistic()">Get statisic</button>
+            </div>
+            <br />
+            <div>
+                <pre id="result"></pre>
+            </div>
+        </div>
+    </body>
+    <script src="result_1.js"></script>
+    <script src="result_2.js"></script>
+    <script src="result_3.js"></script>
+    <script src="result_4.js"></script>
+    <script src="results.js"></script>
+    <script src="script.js"></script>
+    <script src="event.js"></script>
 </html>

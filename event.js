@@ -15,6 +15,7 @@ function handleGetOnlineTotal() {
             const arr = getValues();
             const counts = countTotal(arr, results);
             console.log(counts);
+            displayResult(counts);
         });
     });
 }
@@ -23,6 +24,7 @@ function handleGetOfflineTotal() {
     const arr = getValues();
     const counts = countTotal(arr, allResults);
     console.log(counts);
+    displayResult(counts);
 }
 
 function handleGetOnlineTriple() {
@@ -32,6 +34,7 @@ function handleGetOnlineTriple() {
             const arr = getValues();
             const counts = countTriple(arr, results);
             console.log(counts);
+            displayResult(counts);
         });
     });
 }
@@ -40,6 +43,7 @@ function handleGetOfflineTriple() {
     const arr = getValues();
     const counts = countTriple(arr, allResults);
     console.log(counts);
+    displayResult(counts);
 }
 
 function getValues() {
@@ -54,4 +58,9 @@ function handleGetStatistic() {
             console.log(getStatisticAll(results));
         });
     });
+}
+
+function displayResult(result) {
+    const element = document.querySelector("#result");
+    element.innerHTML = JSON.stringify(result, null, 2)
 }
