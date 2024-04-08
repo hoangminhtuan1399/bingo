@@ -1,0 +1,10 @@
+body {
+    max-width: 360px;
+    max-height: 100vh;
+}
+
+.flex {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
