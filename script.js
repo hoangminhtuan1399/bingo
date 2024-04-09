@@ -32,6 +32,7 @@ function countTotal(totalArr, results) {
             count++;
         }
     });
+    res.push(getStandardDeviation(res));
     return res;
 }
 
@@ -58,6 +59,7 @@ function countTriple(tripleArr, results) {
             count++;
         }
     });
+    res.push(getStandardDeviation(res));
     return res;
 }
 
@@ -132,7 +134,8 @@ function getStatisticAll(results) {
     return res;
 }
 
-function getStandardDeviation(array) {
+function getStandardDeviation(arr) {
+    const array = arr.map(rs => rs.count);
     const n = array.length;
     const mean = array.reduce((a, b) => a + b) / n;
     const sa = Math.sqrt(array.map((x) => Math.pow(x - mean, 2)).reduce((a, b) => a + b) / n);
