@@ -46,6 +46,25 @@ function handleGetOfflineTriple() {
     displayResult(counts);
 }
 
+function handleGetOnlineDouble() {
+    fetch(fetchUrl, fetchOptions).then(res => {
+        res.json().then(res => {
+            const results = res.gbingoDraws;
+            const arr = getValues();
+            const counts = countDouble(arr, results);
+            console.log(counts);
+            displayResult(counts);
+        });
+    });
+}
+
+function handleGetOfflineDouble() {
+    const arr = getValues();
+    const counts = countDouble(arr, allResults);
+    console.log(counts);
+    displayResult(counts);
+}
+
 function getValues() {
     if (!document.querySelector('#check-value').value) return [];
     return document.querySelector('#check-value').value.split(', ').map(item => parseInt(item));
