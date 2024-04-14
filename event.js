@@ -1,16 +1,16 @@
 const fetchOptions = {
-    method: 'POST',
+    method: "POST",
     headers: {
-        Authorization: 'Bearer 50291500:992e1f01-2451-4fc6-bed9-e7df5481e06d',
-        Checksum: '02afccf9b76c80b3ef2ac24832ac4cdbd0e5c75329d92b2ef45959c152b35605'
-    }
+        Authorization: "Bearer 50291500:992e1f01-2451-4fc6-bed9-e7df5481e06d",
+        Checksum: "02afccf9b76c80b3ef2ac24832ac4cdbd0e5c75329d92b2ef45959c152b35605",
+    },
 };
 
-const fetchUrl = 'https://api.vietlott-sms.vn/mobile-api/customerAccount/getStatisticGbingoResult';
+const fetchUrl = "https://api.vietlott-sms.vn/mobile-api/customerAccount/getStatisticGbingoResult";
 
 function handleGetOnlineTotal() {
-    fetch(fetchUrl, fetchOptions).then(res => {
-        res.json().then(res => {
+    fetch(fetchUrl, fetchOptions).then((res) => {
+        res.json().then((res) => {
             const results = res.gbingoDraws;
             const arr = getValues();
             const counts = countTotal(arr, results);
@@ -28,8 +28,8 @@ function handleGetOfflineTotal() {
 }
 
 function handleGetOnlineTriple() {
-    fetch(fetchUrl, fetchOptions).then(res => {
-        res.json().then(res => {
+    fetch(fetchUrl, fetchOptions).then((res) => {
+        res.json().then((res) => {
             const results = res.gbingoDraws;
             const arr = getValues();
             const counts = countTriple(arr, results);
@@ -66,17 +66,26 @@ function handleGetOfflineDouble() {
 }
 
 function getValues() {
-    if (!document.querySelector('#check-value').value) return [];
-    return document.querySelector('#check-value').value.split(', ').map(item => parseInt(item));
+    if (!document.querySelector("#check-value").value) return [];
+    return document
+        .querySelector("#check-value")
+        .value.split(", ")
+        .map((item) => parseInt(item));
 }
 
-function handleGetStatistic() {
-    fetch(fetchUrl, fetchOptions).then(res => {
-        res.json().then(res => {
+function handleGetOnlineStatistic() {
+    fetch(fetchUrl, fetchOptions).then((res) => {
+        res.json().then((res) => {
             const results = res.gbingoDraws;
-            console.log(getStatisticAll(results));
+            displayResult(getStatistic(results));
+            console.log(getStatistic(results));
         });
     });
+}
+
+function handleGetOfflineStatistic() {
+    displayResult(getStatistic(allResults));
+    console.log(getStatistic(allResults));
 }
 
 function displayResult(result) {
