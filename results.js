@@ -3,5 +3,6 @@ var allResults = [
     ...results_2,
     ...results_3,
     ...results_4,
-    ...results_5
+    ...results_5,
+    ...results_6
 ];
