@@ -1,5 +1,5 @@
 function getStatistic(results) {
-    const DAILY_COUNT = 96;
+    const DAILY_COUNT = 160;
     let week = 0;
     let day = 0;
     let dayData = {};
@@ -58,11 +58,11 @@ function getStatistic(results) {
             drawAt
         });
 
-        if (i % DAILY_COUNT == 95) {
+        if (i % DAILY_COUNT == (DAILY_COUNT - 1)) {
             weekData[`week_${week}`].push(dayData[`day_${day}`]);
         }
 
-        if ((dayOfWeek == 0 && i % DAILY_COUNT == 95) || i === results.length - 1) {
+        if ((dayOfWeek == 0 && i % DAILY_COUNT == (DAILY_COUNT - 1)) || i === results.length - 1) {
             weekData[`week_${week}`].push({
                 x120,
                 x40,
