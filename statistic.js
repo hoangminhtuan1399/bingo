@@ -1,5 +1,5 @@
 function getStatistic(results) {
-    const DAILY_COUNT = 160;
+    const DAILY_COUNT = 159;
     let week = 0;
     let day = 0;
     let dayData = {};
