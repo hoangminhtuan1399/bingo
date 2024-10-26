@@ -212,7 +212,7 @@ function getResultsByWeek(results) {
     results.forEach((result, index) => {
         const { drawAt } = result;
         const weekOfMonth = getWeekNumber(new Date(drawAt));
-        if (weekOfMonth != firstWeek) {
+        if (weekOfMonth !== firstWeek) {
             week++;
             weekData[`week_${week}`] = [];
             firstWeek = weekOfMonth;

@@ -8,6 +8,7 @@ const fetchOptions = {
 
 const fetchUrl = "https://api.vietlott-sms.vn/mobile-api/customerAccount/getStatisticGbingoResult";
 
+
 function handleGetOnlineTotal() {
     fetch(fetchUrl, fetchOptions).then((res) => {
         res.json().then((res) => {
@@ -20,7 +21,8 @@ function handleGetOnlineTotal() {
     });
 }
 
-function handleGetOfflineTotal() {
+async function handleGetOfflineTotal() {
+    const allResults = await getOfflineData();
     const arr = getValues();
     const counts = countTotal(arr, allResults);
     console.log(counts);
@@ -39,7 +41,8 @@ function handleGetOnlineTriple() {
     });
 }
 
-function handleGetOfflineTriple() {
+async function handleGetOfflineTriple() {
+    const allResults = await getOfflineData();
     const arr = getValues();
     const counts = countTriple(arr, allResults);
     console.log(counts);
@@ -83,7 +86,8 @@ function handleGetOnlineStatistic() {
     });
 }
 
-function handleGetOfflineStatistic() {
+async function handleGetOfflineStatistic() {
+    const allResults = await getOfflineData();
     displayResult(getStatistic(allResults));
     console.log(getStatistic(allResults));
 }
@@ -91,4 +95,9 @@ function handleGetOfflineStatistic() {
 function displayResult(result) {
     const element = document.querySelector("#result");
     element.innerHTML = JSON.stringify(result, null, 2)
+}
+
+async function getOfflineData() {
+    const data = await fetch('data.json')
+    return await data.json();
 }
