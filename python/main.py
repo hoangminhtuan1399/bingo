@@ -47,7 +47,7 @@ def create_model(num_features, max_value):
 # Function to train the model
 def train_model(model, train_data, val_data):
     # Fit the model on the training data and validate on the validation data for 100 epochs
-    history = model.fit(train_data, train_data, validation_data=(val_data, val_data), epochs=50)
+    history = model.fit(train_data, train_data, validation_data=(val_data, val_data), epochs=20)
 
 # Function to predict numbers using the trained model
 def predict_numbers(model, val_data, num_features):
