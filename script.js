@@ -38,7 +38,10 @@ function countTotal(totalArr, results) {
             count++;
         }
     });
+    const arrayByRange = getResultsByRange(res.slice(0, res.length - 1));
+    console.log(arrayByRange);
     res.push(getStandardDeviation(res));
+    res.reverse();
     return getResultsByWeek(res);
 }
 
@@ -65,7 +68,10 @@ function countTriple(tripleArr, results) {
             count++;
         }
     });
+    const arrayByRange = getResultsByRange(res.slice(0, res.length - 1));
+    console.log(arrayByRange);
     res.push(getStandardDeviation(res));
+    res.reverse();
     return getResultsByWeek(res);
 }
 
@@ -151,58 +157,6 @@ function getStandardDeviation(arr) {
     };
 }
 
-function calculatePayMoney(multiplier, count) {
-    let totalPay = 0;
-    let maxPay = 10;
-    let flag = true;
-    let payList = [];
-    for (let i = 0; i < count; i++) {
-        do {
-            let threshHold = maxPay * multiplier;
-            if (totalPay + maxPay > threshHold) {
-                flag = true;
-                maxPay += 10;
-            } else {
-                flag = false;
-            }
-        } while (flag);
-        totalPay += maxPay;
-        payList.push({
-            totalPay,
-            maxPay,
-            winning: maxPay * multiplier - totalPay,
-        });
-    }
-    return {
-        payList,
-        totalPay,
-        maxPay,
-    };
-}
-
-function calculateProfit(countList, multiplier, min, max) {
-    const payCount = max - min;
-    const statistic = calculatePayMoney(multiplier, payCount);
-    const maxLoss = statistic.totalPay;
-    const payList = statistic.payList;
-    let winning = 0;
-    let losing = 0;
-    countList.forEach((count) => {
-        if (count < min) return;
-        if (count >= max) {
-            losing += maxLoss;
-            return;
-        }
-        const index = count - min;
-        winning += payList[index].winning;
-    });
-    return {
-        winning,
-        losing,
-        total: winning - losing,
-    };
-}
-
 function getResultsByWeek(results) {
     let week = 0;
     let firstWeek = getWeekNumber(new Date(results[0].drawAt));
@@ -226,4 +180,23 @@ function getResultsByWeek(results) {
 function getWeekNumber(date) {
   const janFirst = new Date(date.getFullYear(), 0, 1);
   return Math.ceil((((date.getTime() - janFirst.getTime()) / 86400000) + janFirst.getDay() - 1) / 7);
+}
+
+function getResultsByRange(array) {
+    const range = parseInt(document.getElementById('range').value || '10');
+    const max_range = parseInt(document.getElementById('max-range').value || '0');
+    const results = [];
+
+    for (let i = 1; i <= max_range; i++) {
+        const min = i;
+        const max = i + range - 1;
+
+        // Lọc các đối tượng trong array thỏa mãn điều kiện item.count >= min và item.count <= max
+        const list = array.filter(item => item.count >= min && item.count <= max);
+
+        // Tạo object và thêm vào mảng results
+        results.push({ min, max, list });
+    }
+
+    return results;
 }
