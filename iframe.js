@@ -12,14 +12,14 @@ function removeAllResultForm() {
     allResultFormElement.innerHTML = '';
 }
 
-function createAllResultForm(callback) {
+function createAllResultForm() {
     removeAllResultForm();
     const formEle = document.createElement('form');
     Object.assign(formEle, {
         action: '',
         method: 'post',
         onsubmit(e) {
-            allResultFormOnSubmit(e, callback)
+            allResultFormOnSubmit(e)
         }
     })
     formEle.innerHTML = `
@@ -35,6 +35,5 @@ function allResultFormOnSubmit(e, callback = function() {}) {
     const formData = new FormData(e.target);
     const res = JSON.parse(formData.get('allResult').toString());
     window.allResults = res.gbingoDraws;
-    callback();
     removeAllResultForm();
 }

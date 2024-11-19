@@ -8,7 +8,6 @@ const fetchOptions = {
 
 const fetchUrl = "https://api.vietlott-sms.vn/mobile-api/customerAccount/getStatisticGbingoResult";
 
-
 function handleGetOnlineTotal() {
     const arr = getValues();
     const counts = countTotal(arr, window.allResults);
@@ -63,8 +62,8 @@ function handleGetOnlineStatistic() {
     console.log(getStatistic(window.allResults));
 }
 
-function createForm(callback) {
-    createAllResultForm(callback);
+function createForm() {
+    createAllResultForm();
     createIframe();
 }
 
