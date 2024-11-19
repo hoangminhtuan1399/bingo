@@ -10,35 +10,17 @@ const fetchUrl = "https://api.vietlott-sms.vn/mobile-api/customerAccount/getStat
 
 
 function handleGetOnlineTotal() {
-    fetch(fetchUrl, fetchOptions).then((res) => {
-        res.json().then((res) => {
-            const results = res.gbingoDraws;
-            const arr = getValues();
-            const counts = countTotal(arr, results);
-            console.log(counts);
-            displayResult(counts);
-        });
-    });
-}
-
-async function handleGetOfflineTotal() {
-    const allResults = await getOfflineData();
     const arr = getValues();
-    const counts = countTotal(arr, allResults);
+    const counts = countTotal(arr, window.allResults);
     console.log(counts);
     displayResult(counts);
 }
 
 function handleGetOnlineTriple() {
-    fetch(fetchUrl, fetchOptions).then((res) => {
-        res.json().then((res) => {
-            const results = res.gbingoDraws;
-            const arr = getValues();
-            const counts = countTriple(arr, results);
-            console.log(counts);
-            displayResult(counts);
-        });
-    });
+    const arr = getValues();
+    const counts = countTriple(arr, window.allResults);
+    console.log(counts);
+    displayResult(counts);
 }
 
 async function handleGetOfflineTriple() {
@@ -77,13 +59,13 @@ function getValues() {
 }
 
 function handleGetOnlineStatistic() {
-    fetch(fetchUrl, fetchOptions).then((res) => {
-        res.json().then((res) => {
-            const results = res.gbingoDraws;
-            displayResult(getStatistic(results));
-            console.log(getStatistic(results));
-        });
-    });
+    displayResult(getStatistic(window.allResults));
+    console.log(getStatistic(window.allResults));
+}
+
+function createForm(callback) {
+    createAllResultForm(callback);
+    createIframe();
 }
 
 async function handleGetOfflineStatistic() {
