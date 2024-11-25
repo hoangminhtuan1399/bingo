@@ -1,33 +1,42 @@
 const fetchOptions = {
-    method: "POST",
-    headers: {
-        Authorization: "Bearer 50291500:992e1f01-2451-4fc6-bed9-e7df5481e06d",
-        Checksum: "02afccf9b76c80b3ef2ac24832ac4cdbd0e5c75329d92b2ef45959c152b35605",
-    },
+    method: 'POST', headers: {
+        Authorization: 'Bearer 50291500:992e1f01-2451-4fc6-bed9-e7df5481e06d',
+        Checksum: '02afccf9b76c80b3ef2ac24832ac4cdbd0e5c75329d92b2ef45959c152b35605'
+    }
 };
 
-const fetchUrl = "https://api.vietlott-sms.vn/mobile-api/customerAccount/getStatisticGbingoResult";
+const fetchUrl = 'https://api.vietlott-sms.vn/mobile-api/customerAccount/getStatisticGbingoResult';
 
-function handleGetOnlineTotal() {
+function handleGetOfflineTotal() {
     const arr = getValues();
     const counts = countTotal(arr, window.allResults);
     console.log(counts);
     displayResult(counts);
 }
 
-function handleGetOnlineTriple() {
+function handleGetOfflineTriple() {
     const arr = getValues();
     const counts = countTriple(arr, window.allResults);
     console.log(counts);
     displayResult(counts);
 }
 
-async function handleGetOfflineTriple() {
-    const allResults = await getOfflineData();
+function handleGetOnlineTotal() {
     const arr = getValues();
-    const counts = countTriple(arr, allResults);
-    console.log(counts);
-    displayResult(counts);
+    fetch(fetchUrl, fetchOptions).then(res => res.json()).then(json => {
+        const counts = countTotal(arr, json.gbingoDraws);
+        console.log(counts);
+        displayResult(counts);
+    });
+}
+
+async function handleGetOnlineTriple() {
+    const arr = getValues();
+    fetch(fetchUrl, fetchOptions).then(res => res.json()).then(json => {
+        const counts = countTriple(arr, json.gbingoDraws);
+        console.log(counts);
+        displayResult(counts);
+    });
 }
 
 function handleGetOnlineDouble() {
@@ -50,14 +59,11 @@ function handleGetOfflineDouble() {
 }
 
 function getValues() {
-    if (!document.querySelector("#check-value").value) return [];
-    return document
-        .querySelector("#check-value")
-        .value.split(", ")
-        .map((item) => parseInt(item));
+    if (!document.querySelector('#check-value').value) return [];
+    return document.querySelector('#check-value').value.split(', ').map((item) => parseInt(item));
 }
 
-function handleGetOnlineStatistic() {
+function handleGetOfflineStatistic() {
     displayResult(getStatistic(window.allResults));
     console.log(getStatistic(window.allResults));
 }
@@ -67,18 +73,18 @@ function createForm() {
     createIframe();
 }
 
-async function handleGetOfflineStatistic() {
+async function handleGetOnlineStatistic() {
     const allResults = await getOfflineData();
     displayResult(getStatistic(allResults));
     console.log(getStatistic(allResults));
 }
 
 function displayResult(result) {
-    const element = document.querySelector("#result");
-    element.innerHTML = JSON.stringify(result, null, 2)
+    const element = document.querySelector('#result');
+    element.innerHTML = JSON.stringify(result, null, 2);
 }
 
 async function getOfflineData() {
-    const data = await fetch('data.json')
+    const data = await fetch('data.json');
     return await data.json();
 }
