@@ -39,12 +39,12 @@ async function handleGetOnlineTriple() {
     });
 }
 
-function handleGetOnlineDouble() {
+function handleGetOnlineIndexStatistic() {
     fetch(fetchUrl, fetchOptions).then(res => {
         res.json().then(res => {
             const results = res.gbingoDraws;
             const arr = getValues();
-            const counts = countDouble(arr, results);
+            const counts = countIndex(arr, results);
             console.log(counts);
             displayResult(counts);
         });

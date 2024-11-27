@@ -92,6 +92,52 @@ function countDouble(nums, results) {
     return res;
 }
 
+function checkIndex(nums, winningResult) {
+    const stringResult = winningResult.toString();
+    let rs = false;
+    nums.forEach((num) => {
+        num = num.toString();
+        if (
+            (stringResult === num)
+        ) {
+            rs = true;
+        }
+    });
+    return rs;
+}
+
+function countIndex(nums, results) {
+    const res = {
+        0: [],
+        1: [],
+        2: []
+    }
+    let counts = [1, 1, 1];
+    results.forEach(({ winningResult, drawAt }, index) => {
+        for (let i = 0; i < winningResult.length; i++) {
+            if (checkIndex(nums, winningResult[i])) {
+                res[i].push({ winningResult: winningResult, count: counts[i], index, drawAt });
+                counts[i] = 1;
+            } else if (index === results.length - 1) {
+                res[i].push({
+                    count: counts[i],
+                    index,
+                });
+                counts[i] = 1;
+            } else {
+                counts[i]++;
+            }
+        }
+    })
+    res[0].push(getStandardDeviation(res[0]))
+    res[0].reverse();
+    res[1].push(getStandardDeviation(res[1]))
+    res[1].reverse();
+    res[2].push(getStandardDeviation(res[2]))
+    res[2].reverse();
+    return res;
+}
+
 function getStatisticAll(results) {
     const res = {
         trip_1: {
