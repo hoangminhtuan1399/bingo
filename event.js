@@ -60,7 +60,7 @@ function handleGetOfflineDouble() {
 
 function getValues() {
     if (!document.querySelector('#check-value').value) return [];
-    return document.querySelector('#check-value').value.split(', ').map((item) => parseInt(item));
+    return document.querySelector('#check-value').value.split(' ').map((item) => parseInt(item));
 }
 
 function handleGetOfflineStatistic() {
