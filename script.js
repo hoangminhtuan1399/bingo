@@ -211,13 +211,18 @@ function getResultsByWeek(results) {
     };
     results.forEach((result, index) => {
         const { drawAt } = result;
-        const weekOfMonth = getWeekNumber(new Date(drawAt));
+        const date = new Date(drawAt);
+        const weekDay = date.getDay();
+        const weekOfMonth = getWeekNumber(date);
         if (weekOfMonth !== firstWeek) {
             week++;
             weekData[`week_${week}`] = [];
             firstWeek = weekOfMonth;
         }
-        weekData[`week_${week}`].push(result);
+        weekData[`week_${week}`].push({
+            ...result,
+            weekday: weekDay === 0 ? 8 : weekDay + 1
+        });
     });
 
     return weekData;
