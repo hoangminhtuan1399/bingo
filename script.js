@@ -192,6 +192,25 @@ function getStatisticAll(results) {
     return res;
 }
 
+var totalCombinations = {
+    3: 1,
+    4: 3,
+    5: 6,
+    6: 10,
+    7: 15,
+    8: 21,
+    9: 25,
+    10: 27,
+    11: 27,
+    12: 25,
+    13: 21,
+    14: 15,
+    15: 10,
+    16: 6,
+    17: 3,
+    18: 1
+};
+
 function getStandardDeviation(arr) {
     const array = arr.filter((rs) => !!rs.winningResult).map((rs) => rs.count);
     const n = array.length;
@@ -251,3 +270,22 @@ function getResultsByRange(array) {
 
     return results;
 }
+
+var totalObject = {
+    3: 120,
+    4: 40,
+    5: 20,
+    6: 12,
+    7: 8,
+    8: 5.5,
+    9: 4.7,
+    10: 4.4,
+    11: 4.4,
+    12: 4.7,
+    13: 5.5,
+    14: 8,
+    15: 12,
+    16: 20,
+    17: 40,
+    18: 120
+};

@@ -13,7 +13,10 @@ function handleGetOfflineTotal() {
   const arr = getValues();
 
   fetch(fetchOffUrl).then(res => res.json()).then(json => {
-    const counts = countTotal(arr, json.gbingoDraws);
+    const counts = {
+      newest: json.gbingoDraws[json.gbingoDraws.length - 1],
+      ...countTotal(arr, json.gbingoDraws)
+    };
     console.log(counts);
     displayResult(counts);
   });
@@ -23,7 +26,10 @@ function handleGetOfflineTriple() {
   const arr = getValues();
 
   fetch(fetchOffUrl).then(res => res.json()).then(json => {
-    const counts = countTriple(arr, json.gbingoDraws);
+    const counts = {
+      newest: json.gbingoDraws[json.gbingoDraws.length - 1],
+      ...countTriple(arr, json.gbingoDraws)
+    };
     console.log(counts);
     displayResult(counts);
   });
@@ -32,7 +38,10 @@ function handleGetOfflineTriple() {
 function handleGetOnlineTotal() {
   const arr = getValues();
   fetch(fetchUrl, fetchOptions).then(res => res.json()).then(json => {
-    const counts = countTotal(arr, json.gbingoDraws);
+    const counts = {
+      newest: json.gbingoDraws[json.gbingoDraws.length - 1],
+      ...countTotal(arr, json.gbingoDraws)
+    };
     console.log(counts);
     displayResult(counts);
   });
@@ -41,7 +50,10 @@ function handleGetOnlineTotal() {
 async function handleGetOnlineTriple() {
   const arr = getValues();
   fetch(fetchUrl, fetchOptions).then(res => res.json()).then(json => {
-    const counts = countTriple(arr, json.gbingoDraws);
+    const counts = {
+      newest: json.gbingoDraws[json.gbingoDraws.length - 1],
+      ...countTriple(arr, json.gbingoDraws)
+    };
     console.log(counts);
     displayResult(counts);
   });
@@ -52,18 +64,14 @@ function handleGetOnlineIndexStatistic() {
     res.json().then(res => {
       const results = res.gbingoDraws;
       const arr = getValues();
-      const counts = countIndex(arr, results);
+      const counts = {
+        newest: results[results.length - 1],
+        ...countIndex(arr, results)
+      };
       console.log(counts);
       displayResult(counts);
     });
   });
-}
-
-function handleGetOfflineDouble() {
-  const arr = getValues();
-  const counts = countDouble(arr, allResults);
-  console.log(counts);
-  displayResult(counts);
 }
 
 function getValues() {
@@ -71,28 +79,7 @@ function getValues() {
   return document.querySelector('#check-value').value.split(' ').map((item) => parseInt(item));
 }
 
-function handleGetOfflineStatistic() {
-  displayResult(getStatistic(window.allResults));
-  console.log(getStatistic(window.allResults));
-}
-
-function createForm() {
-  createAllResultForm();
-  createIframe();
-}
-
-async function handleGetOnlineStatistic() {
-  const allResults = await getOfflineData();
-  displayResult(getStatistic(allResults));
-  console.log(getStatistic(allResults));
-}
-
 function displayResult(result) {
   const element = document.querySelector('#result');
   element.innerHTML = JSON.stringify(result, null, 2);
-}
-
-async function getOfflineData() {
-  const data = await fetch('data.json');
-  return await data.json();
 }
