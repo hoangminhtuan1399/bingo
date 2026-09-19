@@ -10,7 +10,7 @@ self.addEventListener('push', (event) => {
     try {
       const res = await fetch(`${WORKER_URL}/latest`);
       const draw = await res.json();
-      if (draw.winningResult) body = String(draw.winningResult);
+      if (draw.winningResult) body = formatDrawNotification(draw);
     } catch (e) {
       console.error(e);
     }

@@ -142,7 +142,7 @@ async function handleToggleSubscribe() {
     // Noti xác nhận
     const draw = await (await fetch(`${WORKER_URL}/latest`)).json();
     await reg.showNotification('Đã subscribe', {
-      body: draw.winningResult ? `Kết quả hiện tại: ${draw.winningResult}` : 'Chưa có kết quả',
+      body: formatDrawNotification(draw),
       icon: 'icon-192.png'
     });
     await refreshSubscribeUi();

@@ -40,17 +40,36 @@ async function sendPush(subscription, env) {
   });
 }
 
+function getHoa(winningResult) {
+  const s = String(winningResult);
+  return s[0] === s[1] && s[1] === s[2] ? parseInt(s[0]) : null;
+}
+
+// Số kì đã quay kể từ lần ra hoa gần nhất (0 = kì mới nhất là hoa).
+// null = chưa ra trong dữ liệu API trả về (ít nhất `total` kì)
+function getHoaGaps(draws) {
+  const hoaGaps = { 1: null, 2: null, 3: null, 4: null, 5: null, 6: null };
+  let hoaGap = null;
+  for (let i = draws.length - 1; i >= 0; i--) {
+    const hoa = getHoa(draws[i].winningResult);
+    if (hoa === null) continue;
+    const gap = draws.length - 1 - i;
+    if (hoaGap === null) hoaGap = gap;
+    if (hoaGaps[hoa] === null) hoaGaps[hoa] = gap;
+  }
+  return { hoaGap, hoaGaps, total: draws.length };
+}
+
 async function fetchLatestDraw(env) {
   const res = await fetch(API_URL, {
     method: 'POST',
     headers: { Authorization: env.API_AUTHORIZATION, Checksum: env.API_CHECKSUM }
   });
   const json = await res.json();
-  const draws = json.gbingoDraws || [];
-  for (let i = draws.length - 1; i >= 0; i--) {
-    if (draws[i].winningResult) return { winningResult: draws[i].winningResult, drawAt: draws[i].drawAt };
-  }
-  return null;
+  const draws = (json.gbingoDraws || []).filter((d) => d.winningResult);
+  if (!draws.length) return null;
+  const { winningResult, drawAt } = draws[draws.length - 1];
+  return { winningResult, drawAt, ...getHoaGaps(draws) };
 }
 
 function corsHeaders(env) {
