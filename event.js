@@ -83,3 +83,116 @@ function displayResult(result) {
   const element = document.querySelector('#result');
   element.innerHTML = JSON.stringify(result, null, 2);
 }
+
+let subscribeTimer = null;
+let lastCheckedAt = null;
+
+function fmtTime(date) {
+  return date ? date.toLocaleTimeString() : '-';
+}
+
+function updateSubscribeStatus(extra = '') {
+  const el = document.querySelector('#subscribe-status');
+  if (subscribeTimer === null) {
+    el.textContent = '';
+    return;
+  }
+  const nextAt = new Date(Date.now() + msUntilNextSlot());
+  el.textContent = `Đang subscribe | Quyền: ${Notification.permission} | Kiểm tra gần nhất: ${fmtTime(lastCheckedAt)} | Lần kế tiếp: ${fmtTime(nextAt)} ${extra}`;
+}
+
+async function showNotification(title, body) {
+  // Android Chrome và iOS PWA chỉ cho hiện noti qua Service Worker
+  if ('serviceWorker' in navigator) {
+    const reg = await navigator.serviceWorker.ready;
+    await reg.showNotification(title, { body, icon: 'icon-192.png' });
+    console.log('[notification] shown (sw):', title);
+    return;
+  }
+  const n = new Notification(title, { body });
+  n.onshow = () => console.log('[notification] shown:', title);
+  n.onerror = (e) => console.error('[notification] error:', e);
+}
+
+function notify(title, body) {
+  showNotification(title, body).catch((e) => console.error('[notification] error:', e));
+  updateSubscribeStatus(`| ${title}: ${body}`);
+}
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch((e) => console.error('[sw] register failed:', e));
+}
+
+function getLatestDraw(draws) {
+  for (let i = draws.length - 1; i >= 0; i--) {
+    if (draws[i].winningResult) return draws[i];
+  }
+  return null;
+}
+
+// Mốc kế tiếp có phút % 6 === 1 (:01, :07, :13, :19, :25, ...), luôn tính lại từ đồng hồ thật để không bị trôi
+function msUntilNextSlot(now = new Date()) {
+  const next = new Date(now);
+  next.setSeconds(0, 0);
+  do {
+    next.setMinutes(next.getMinutes() + 1);
+  } while (next.getMinutes() % 6 !== 1);
+  return next - now;
+}
+
+async function fetchLatestDraw() {
+  const res = await fetch(fetchUrl, fetchOptions);
+  const json = await res.json();
+  lastCheckedAt = new Date();
+  return getLatestDraw(json.gbingoDraws);
+}
+
+async function subscribeTick() {
+  try {
+    const draw = await fetchLatestDraw();
+    console.log(`[subscribe] ${fmtTime(new Date())} latest=${draw && draw.drawAt}-${draw && draw.winningResult}`);
+    if (draw) {
+      notify('Kết quả mới nhất', String(draw.winningResult));
+    }
+  } catch (e) {
+    console.error(e);
+  }
+  if (subscribeTimer === null) return;
+  subscribeTimer = setTimeout(subscribeTick, msUntilNextSlot());
+  updateSubscribeStatus();
+}
+
+async function handleToggleSubscribe() {
+  const btn = document.querySelector('#subscribe-btn');
+  const status = document.querySelector('#subscribe-status');
+
+  if (subscribeTimer !== null) {
+    clearTimeout(subscribeTimer);
+    subscribeTimer = null;
+    btn.textContent = 'Subscribe';
+    status.textContent = '';
+    return;
+  }
+
+  if (!('Notification' in window)) {
+    status.textContent = 'Trình duyệt không hỗ trợ Notification';
+    return;
+  }
+  const permission = await Notification.requestPermission();
+  if (permission !== 'granted') {
+    status.textContent = `Quyền thông báo: ${permission}. Hãy cho phép thông báo cho trang này (cần chạy qua localhost/HTTPS, không dùng file://)`;
+    return;
+  }
+
+  subscribeTimer = setTimeout(subscribeTick, msUntilNextSlot());
+  btn.textContent = 'Unsubscribe';
+
+  // Noti xác nhận
+  try {
+    const draw = await fetchLatestDraw();
+    notify('Đã subscribe', draw ? `Kết quả hiện tại: ${draw.winningResult}` : 'Chưa có kết quả');
+  } catch (e) {
+    console.error(e);
+    notify('Đã subscribe', 'Không lấy được kết quả hiện tại (xem console)');
+  }
+}

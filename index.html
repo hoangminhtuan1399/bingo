@@ -7,6 +7,11 @@
         <meta http-equiv="X-UA-Compatible" content="ie=edge">
         <title>Title</title>
         <link rel="stylesheet" href="style.css" />
+        <link rel="manifest" href="manifest.json" />
+        <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+        <meta name="theme-color" content="#1e40af">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="mobile-web-app-capable" content="yes">
     </head>
     <body>
         <h2>Count result</h2>
@@ -34,6 +39,9 @@
                     <button onclick="handleGetOnlineTriple()">Get onl triple</button>
                 </div>
                 <div>
+                    <button id="subscribe-btn" onclick="handleToggleSubscribe()">Subscribe</button>
+                </div>
+                <div>
                     <button onclick="handleGetOfflineTotal()">Get off total</button>
                 </div>
                 <div>
@@ -41,6 +49,7 @@
                 </div>
             </div>
         </div>
+        <div id="subscribe-status"></div>
         <br />
         <div id="all-result-form"></div>
         <br />
