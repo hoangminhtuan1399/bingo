@@ -1,0 +1,16 @@
+name = "bingo-push"
+main = "src/index.js"
+compatibility_date = "2025-01-01"
+
+[triggers]
+# Phút chia 6 dư 1: :01, :07, :13, ... :55 (cron của Cloudflare dùng UTC, nhưng phút thì giống nhau ở mọi múi giờ)
+crons = ["1-59/6 * * * *"]
+
+[[kv_namespaces]]
+binding = "SUBS"
+id = "94b65fbb2a3941789dfcd0ce6a96f193"
+
+[vars]
+VAPID_SUBJECT = "mailto:mrnoname1999@gmail.com"
+VAPID_PUBLIC_KEY = "BEu3DcmRbjEA2qU6V42voNKHuF-ZaB_0zvvF3ftK4FeSjCblKDGtuRFkUZkqq85kPDB6JgfAbUxDbmNOPUL_fQY"
+ALLOWED_ORIGIN = "https://hoangminhtuan1399.github.io"

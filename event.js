@@ -84,115 +84,83 @@ function displayResult(result) {
   element.innerHTML = JSON.stringify(result, null, 2);
 }
 
-let subscribeTimer = null;
-let lastCheckedAt = null;
-
-function fmtTime(date) {
-  return date ? date.toLocaleTimeString() : '-';
+function urlBase64ToUint8Array(base64) {
+  const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4);
+  const raw = atob(padded.replace(/-/g, '+').replace(/_/g, '/'));
+  return Uint8Array.from(raw, (c) => c.charCodeAt(0));
 }
 
-function updateSubscribeStatus(extra = '') {
-  const el = document.querySelector('#subscribe-status');
-  if (subscribeTimer === null) {
-    el.textContent = '';
-    return;
-  }
-  const nextAt = new Date(Date.now() + msUntilNextSlot());
-  el.textContent = `Đang subscribe | Quyền: ${Notification.permission} | Kiểm tra gần nhất: ${fmtTime(lastCheckedAt)} | Lần kế tiếp: ${fmtTime(nextAt)} ${extra}`;
+function postJson(path, body) {
+  return fetch(`${WORKER_URL}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
 }
 
-async function showNotification(title, body) {
-  // Android Chrome và iOS PWA chỉ cho hiện noti qua Service Worker
-  if ('serviceWorker' in navigator) {
-    const reg = await navigator.serviceWorker.ready;
-    await reg.showNotification(title, { body, icon: 'icon-192.png' });
-    console.log('[notification] shown (sw):', title);
-    return;
-  }
-  const n = new Notification(title, { body });
-  n.onshow = () => console.log('[notification] shown:', title);
-  n.onerror = (e) => console.error('[notification] error:', e);
-}
-
-function notify(title, body) {
-  showNotification(title, body).catch((e) => console.error('[notification] error:', e));
-  updateSubscribeStatus(`| ${title}: ${body}`);
-}
+const pushSupported = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch((e) => console.error('[sw] register failed:', e));
 }
 
-function getLatestDraw(draws) {
-  for (let i = draws.length - 1; i >= 0; i--) {
-    if (draws[i].winningResult) return draws[i];
+async function refreshSubscribeUi() {
+  const btn = document.querySelector('#subscribe-btn');
+  const status = document.querySelector('#subscribe-status');
+  if (!pushSupported) {
+    status.textContent = 'Trình duyệt không hỗ trợ push (iOS: cần Add to Home Screen từ Safari, rồi mở app từ icon)';
+    return;
   }
-  return null;
-}
-
-// Mốc kế tiếp có phút % 6 === 1 (:01, :07, :13, :19, :25, ...), luôn tính lại từ đồng hồ thật để không bị trôi
-function msUntilNextSlot(now = new Date()) {
-  const next = new Date(now);
-  next.setSeconds(0, 0);
-  do {
-    next.setMinutes(next.getMinutes() + 1);
-  } while (next.getMinutes() % 6 !== 1);
-  return next - now;
-}
-
-async function fetchLatestDraw() {
-  const res = await fetch(fetchUrl, fetchOptions);
-  const json = await res.json();
-  lastCheckedAt = new Date();
-  return getLatestDraw(json.gbingoDraws);
-}
-
-async function subscribeTick() {
-  try {
-    const draw = await fetchLatestDraw();
-    console.log(`[subscribe] ${fmtTime(new Date())} latest=${draw && draw.drawAt}-${draw && draw.winningResult}`);
-    if (draw) {
-      notify('Kết quả mới nhất', String(draw.winningResult));
-    }
-  } catch (e) {
-    console.error(e);
-  }
-  if (subscribeTimer === null) return;
-  subscribeTimer = setTimeout(subscribeTick, msUntilNextSlot());
-  updateSubscribeStatus();
+  const reg = await navigator.serviceWorker.ready;
+  const sub = await reg.pushManager.getSubscription();
+  btn.textContent = sub ? 'Unsubscribe' : 'Subscribe';
+  status.textContent = sub ? 'Đang subscribe: server sẽ gửi noti mỗi 6 phút, kể cả khi đóng app' : '';
 }
 
 async function handleToggleSubscribe() {
-  const btn = document.querySelector('#subscribe-btn');
   const status = document.querySelector('#subscribe-status');
+  if (!pushSupported) return refreshSubscribeUi();
 
-  if (subscribeTimer !== null) {
-    clearTimeout(subscribeTimer);
-    subscribeTimer = null;
-    btn.textContent = 'Subscribe';
-    status.textContent = '';
-    return;
-  }
+  // Phải gọi ngay trong user gesture (iOS rất nghiêm ngặt việc này)
+  const permissionPromise = Notification.permission === 'default'
+    ? Notification.requestPermission()
+    : Promise.resolve(Notification.permission);
 
-  if (!('Notification' in window)) {
-    status.textContent = 'Trình duyệt không hỗ trợ Notification';
-    return;
-  }
-  const permission = await Notification.requestPermission();
-  if (permission !== 'granted') {
-    status.textContent = `Quyền thông báo: ${permission}. Hãy cho phép thông báo cho trang này (cần chạy qua localhost/HTTPS, không dùng file://)`;
-    return;
-  }
-
-  subscribeTimer = setTimeout(subscribeTick, msUntilNextSlot());
-  btn.textContent = 'Unsubscribe';
-
-  // Noti xác nhận
   try {
-    const draw = await fetchLatestDraw();
-    notify('Đã subscribe', draw ? `Kết quả hiện tại: ${draw.winningResult}` : 'Chưa có kết quả');
+    const reg = await navigator.serviceWorker.ready;
+    const existing = await reg.pushManager.getSubscription();
+
+    if (existing) {
+      await postJson('/unsubscribe', { endpoint: existing.endpoint });
+      await existing.unsubscribe();
+      return refreshSubscribeUi();
+    }
+
+    const permission = await permissionPromise;
+    if (permission !== 'granted') {
+      status.textContent = `Quyền thông báo: ${permission}. Hãy cho phép thông báo cho trang này`;
+      return;
+    }
+
+    const publicKey = await (await fetch(`${WORKER_URL}/vapid-public-key`)).text();
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(publicKey)
+    });
+    const res = await postJson('/subscribe', sub.toJSON());
+    if (!res.ok) throw new Error(`subscribe failed: ${res.status}`);
+
+    // Noti xác nhận
+    const draw = await (await fetch(`${WORKER_URL}/latest`)).json();
+    await reg.showNotification('Đã subscribe', {
+      body: draw.winningResult ? `Kết quả hiện tại: ${draw.winningResult}` : 'Chưa có kết quả',
+      icon: 'icon-192.png'
+    });
+    await refreshSubscribeUi();
   } catch (e) {
     console.error(e);
-    notify('Đã subscribe', 'Không lấy được kết quả hiện tại (xem console)');
+    status.textContent = `Lỗi: ${e.message}`;
   }
 }
+
+refreshSubscribeUi();
