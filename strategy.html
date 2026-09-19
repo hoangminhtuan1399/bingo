@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="vi">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Chiến thuật hoa</title>
+        <link rel="stylesheet" href="style.css" />
+        <link rel="stylesheet" href="strategy.css" />
+    </head>
+    <body class="strategy">
+        <h2>Mô phỏng chiến thuật hoa</h2>
+        <form class="flex controls" onsubmit="event.preventDefault(); runStrategy()">
+            <div>
+                <label for="source">Dữ liệu</label>
+                <select id="source">
+                    <option value="online">Online (fetchUrl)</option>
+                    <option value="offline">Offline (bingo18.top)</option>
+                </select>
+            </div>
+            <div>
+                <label for="strategy">Chiến thuật</label>
+                <select id="strategy" onchange="toggleStrategyInputs()">
+                    <option value="window">A: cược 36 kì sau mỗi hoa</option>
+                    <option value="plan">B: hoa sau ≥ 90 kì hoa chung</option>
+                </select>
+            </div>
+            <div>
+                <label for="capital">Vốn</label>
+                <input type="number" id="capital" value="100000000" step="10000" />
+            </div>
+            <div>
+                <label for="mode">Cách đặt</label>
+                <select id="mode">
+                    <option value="martingale">Gấp thếp (bù cost)</option>
+                    <option value="fixed">Số tiền cố định</option>
+                </select>
+            </div>
+            <div>
+                <label for="base-bet">Cược ban đầu / hoa / kì</label>
+                <input type="number" id="base-bet" value="10000" step="10000" min="10000" />
+            </div>
+            <div>
+                <label for="stop-loss">Cắt lỗ (cost &gt;, 0 = tắt)</label>
+                <input type="number" id="stop-loss" value="0" step="10000" min="0" />
+            </div>
+            <div>
+                <label for="window">Số kì sau hoa</label>
+                <input type="number" id="window" value="36" />
+            </div>
+            <div class="only-plan" hidden>
+                <label for="min-gap">Hoa chung chưa về ≥</label>
+                <input type="number" id="min-gap" value="90" />
+            </div>
+            <div class="only-plan" hidden>
+                <label for="rounds">Số kì hoa cược tiếp</label>
+                <input type="number" id="rounds" value="3" />
+            </div>
+            <div class="only-window">
+                <label for="threshold">Ngưỡng kì chưa về</label>
+                <input type="number" id="threshold" value="216" />
+            </div>
+            <div class="only-window">
+                <label for="unseen">Hoa chưa thấy trong dữ liệu</label>
+                <select id="unseen">
+                    <option value="fromStart">Tính số kì từ đầu dữ liệu</option>
+                    <option value="skip">Bỏ qua</option>
+                </select>
+            </div>
+            <div>
+                <span class="field-label">Hoa được cược</span>
+                <div class="hoa-checks">
+                    <label><input type="checkbox" name="hoa" value="1" checked /> 1</label>
+                    <label><input type="checkbox" name="hoa" value="2" checked /> 2</label>
+                    <label><input type="checkbox" name="hoa" value="3" checked /> 3</label>
+                    <label><input type="checkbox" name="hoa" value="4" checked /> 4</label>
+                    <label><input type="checkbox" name="hoa" value="5" checked /> 5</label>
+                    <label><input type="checkbox" name="hoa" value="6" checked /> 6</label>
+                </div>
+            </div>
+            <div>
+                <button type="submit">Chạy</button>
+            </div>
+        </form>
+        <p class="note">
+            A: mỗi kì trong cửa sổ (số kì sau hoa, hoa mới thì đếm lại) đặt cho các hoa đã chọn có số kì chưa về &lt; ngưỡng.<br>
+            B: hoa ra sau ≥ N kì hoa chung thì cược hoa đó trong K kì hoa tiếp theo; quá "số kì sau hoa" mà chưa có hoa thì dừng, chờ hoa tiếp theo (vẫn tính 1 kì hoa). Nhiều hoa có thể cược song song.<br>
+            Gấp thếp: mức cược nhỏ nhất (bội số 10.000, không thấp hơn cược ban đầu) sao cho 120 × cược ≥ cost + cược. Cố định: luôn đặt đúng cược ban đầu.
+            Trượt thì cost += cược; trúng thì benefit = 120 × cược − cost − cược, cost về 0. Cost vượt mức cắt lỗ thì cũng về 0.
+        </p>
+        <div id="status"></div>
+
+        <section id="summary" class="tiles"></section>
+
+        <h3>Vốn qua từng kì</h3>
+        <div id="chart" class="chart"></div>
+
+        <h3>Cược lớn nhất trong 1 kì</h3>
+        <div id="max-table" class="table-wrap"></div>
+
+        <h3>Các lần trúng</h3>
+        <div id="win-table" class="table-wrap"></div>
+
+        <h3>Chi tiết từng kì</h3>
+<!--        <div id="detail-table" class="table-wrap tall"></div>-->
+    </body>
+    <script src="config.js"></script>
+    <script src="strategy.js"></script>
+</html>
