@@ -10,23 +10,22 @@ async function dismissSilently() {
   (await self.registration.getNotifications({ tag: 'silent' })).forEach((n) => n.close());
 }
 
-// Worker gửi push rỗng theo lịch, ở đây lấy kết quả mới nhất rồi hiện noti
+// Worker gửi push rỗng theo lịch, ở đây tự gọi API từ máy người dùng (IP Việt Nam)
+// và chỉ hiện noti khi kì mới nhất là hoa
 self.addEventListener('push', (event) => {
   event.waitUntil((async () => {
-    let body = 'Có kết quả mới';
-    let tag;
+    let draw = null;
     try {
-      const res = await fetch(`${WORKER_URL}/latest`);
-      const draw = await res.json();
-      if (draw.winningResult) {
-        if (draw.hoa === null) return dismissSilently();
-        body = formatDrawNotification(draw);
-        tag = draw.drawAt; // cùng kì thì thay noti cũ, không báo lại
-      }
+      draw = await fetchLatestDraw();
     } catch (e) {
       console.error(e);
     }
-    await self.registration.showNotification('Kết quả mới nhất', { body, icon: 'icon-192.png', tag });
+    if (!draw || draw.hoa === null) return dismissSilently();
+    await self.registration.showNotification(`Hoa ${draw.hoa}`, {
+      body: formatDrawNotification(draw),
+      icon: 'icon-192.png',
+      tag: draw.drawAt // cùng kì thì thay noti cũ, không báo lại
+    });
   })());
 });
 

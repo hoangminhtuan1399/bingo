@@ -1,5 +1,3 @@
-const API_URL = 'https://api.vietlott-sms.vn/mobile-api/customerAccount/getStatisticGbingoResult';
-
 const encoder = new TextEncoder();
 
 function b64u(input) {
@@ -28,7 +26,7 @@ async function vapidAuthorization(endpoint, env) {
   return `vapid t=${header}.${payload}.${b64u(sig)}, k=${env.VAPID_PUBLIC_KEY}`;
 }
 
-// Push rỗng: service worker tự lấy kết quả từ /latest khi nhận được
+// Push rỗng: service worker tự gọi API khi nhận được
 async function sendPush(subscription, env) {
   return fetch(subscription.endpoint, {
     method: 'POST',
@@ -38,41 +36,6 @@ async function sendPush(subscription, env) {
       Urgency: 'high'
     }
   });
-}
-
-function getHoa(winningResult) {
-  const s = String(winningResult);
-  return s[0] === s[1] && s[1] === s[2] ? parseInt(s[0]) : null;
-}
-
-// Kì mới nhất có phải hoa không, và số kì chưa ra hoa trước đó
-// (VD hoa ở kì 100 và 180 -> 80). prevHoaGap = null nếu không thấy hoa trước đó
-// trong dữ liệu API trả về (ít nhất `total` kì)
-function getHoaInfo(draws) {
-  const last = draws.length - 1;
-  const hoa = getHoa(draws[last].winningResult);
-  let prevHoaGap = null;
-  if (hoa !== null) {
-    for (let i = last - 1; i >= 0; i--) {
-      if (getHoa(draws[i].winningResult) !== null) {
-        prevHoaGap = last - i;
-        break;
-      }
-    }
-  }
-  return { hoa, prevHoaGap, total: draws.length };
-}
-
-async function fetchLatestDraw(env) {
-  const res = await fetch(API_URL, {
-    method: 'POST',
-    headers: { Authorization: env.API_AUTHORIZATION, Checksum: env.API_CHECKSUM }
-  });
-  const json = await res.json();
-  const draws = (json.gbingoDraws || []).filter((d) => d.winningResult);
-  if (!draws.length) return null;
-  const { winningResult, drawAt } = draws[draws.length - 1];
-  return { winningResult, drawAt, ...getHoaInfo(draws) };
 }
 
 function corsHeaders(env) {
@@ -96,14 +59,6 @@ export default {
 
     if (url.pathname === '/vapid-public-key') return reply(env.VAPID_PUBLIC_KEY, 200, 'text/plain');
 
-    if (url.pathname === '/latest') {
-      try {
-        return reply(await fetchLatestDraw(env) || {});
-      } catch (e) {
-        return reply({ error: String(e) }, 502);
-      }
-    }
-
     if (url.pathname === '/subscribe' && request.method === 'POST') {
       const sub = await request.json();
       if (!sub || !sub.endpoint) return reply({ error: 'invalid subscription' }, 400);
@@ -122,7 +77,7 @@ export default {
 
   async scheduled(event, env) {
     // Không gọi API ở đây: Vietlott chặn IP ngoài Việt Nam mà cron chạy ở Singapore.
-    // Push rỗng, service worker trên máy người dùng tự gọi /latest rồi quyết định có hiện noti không
+    // Push rỗng, service worker trên máy người dùng tự gọi API rồi chỉ hiện noti khi có hoa
     const { keys } = await env.SUBS.list();
     await Promise.all(keys.map(async ({ name }) => {
       const sub = JSON.parse(await env.SUBS.get(name));

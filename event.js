@@ -103,7 +103,7 @@ async function refreshSubscribeUi() {
   const reg = await navigator.serviceWorker.ready;
   const sub = await reg.pushManager.getSubscription();
   btn.textContent = sub ? 'Unsubscribe' : 'Subscribe';
-  status.textContent = sub ? 'Đang subscribe: server sẽ gửi noti mỗi 6 phút, kể cả khi đóng app' : '';
+  status.textContent = sub ? 'Đang subscribe: sẽ báo khi có hoa, kể cả khi đóng app' : '';
 }
 
 async function handleToggleSubscribe() {
@@ -140,7 +140,7 @@ async function handleToggleSubscribe() {
     if (!res.ok) throw new Error(`subscribe failed: ${res.status}`);
 
     // Noti xác nhận
-    const draw = await (await fetch(`${WORKER_URL}/latest`)).json();
+    const draw = await fetchLatestDraw();
     await reg.showNotification('Đã subscribe', {
       body: formatDrawNotification(draw),
       icon: 'icon-192.png'

@@ -13,11 +13,6 @@ function getBuy(cost, baseBet, count = 1) {
   return Math.max(baseBet, units * BET_UNIT);
 }
 
-function getHoa(winningResult) {
-  const s = winningResult.toString();
-  return s[0] === s[1] && s[1] === s[2] ? parseInt(s[0]) : null;
-}
-
 // Chiến thuật A: sau mỗi hoa, trong windowSize kì tiếp theo cược các hoa có số kì chưa về < threshold
 function createWindowPlanner({ windowSize, threshold, unseen }) {
   const lastSeen = { 1: null, 2: null, 3: null, 4: null, 5: null, 6: null };
