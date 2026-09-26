@@ -3,8 +3,8 @@ main = "src/index.js"
 compatibility_date = "2025-01-01"
 
 [triggers]
-# Phút chia 6 dư 1: :01, :07, :13, ... :55 (cron của Cloudflare dùng UTC, nhưng phút thì giống nhau ở mọi múi giờ)
-crons = ["1-59/6 * * * *"]
+# Mỗi phút kiểm tra kì mới nhất, chỉ push khi có hoa (kì đã báo lưu trong KV nên không báo trùng)
+crons = ["* * * * *"]
 
 [[kv_namespaces]]
 binding = "SUBS"

@@ -1,6 +1,7 @@
 # bingo-push (Cloudflare Worker)
 
-Chạy cron mỗi 6 phút (phút :01, :07, ...) và gửi Web Push rỗng tới các thiết bị đã subscribe. Worker không gọi API Vietlott (chặn IP ngoài Việt Nam); service worker trên máy người dùng tự gọi API và chỉ hiện noti khi có hoa.
+Chạy cron mỗi phút, đọc kết quả từ bingo18.top (API Vietlott chặn IP ngoài Việt Nam, cron chạy ở Singapore) và chỉ gửi Web Push khi kì mới nhất là hoa, kèm số kì chưa ra hoa trước đó. Không gửi push khi không có hoa vì iOS hiện noti cho mọi push.
+Kiểm tra Worker đọc được dữ liệu không: mở `https://bingo-push.bingo-net.workers.dev/latest`.
 
 ## Triển khai
 

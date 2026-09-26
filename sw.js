@@ -1,32 +1,19 @@
-importScripts('config.js');
-
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim()));
 
-// Trình duyệt bắt buộc mỗi push phải hiện noti (không thì Chrome tự hiện noti "đã cập nhật trong nền"),
-// nên kì không hoa thì hiện noti im lặng rồi đóng ngay
-async function dismissSilently() {
-  await self.registration.showNotification('', { silent: true, tag: 'silent' });
-  (await self.registration.getNotifications({ tag: 'silent' })).forEach((n) => n.close());
-}
-
-// Worker gửi push rỗng theo lịch, ở đây tự gọi API từ máy người dùng (IP Việt Nam)
-// và chỉ hiện noti khi kì mới nhất là hoa
+// Worker chỉ gửi push khi có hoa, kèm sẵn nội dung { title, body, tag }
 self.addEventListener('push', (event) => {
-  event.waitUntil((async () => {
-    let draw = null;
-    try {
-      draw = await fetchLatestDraw();
-    } catch (e) {
-      console.error(e);
-    }
-    if (!draw || draw.hoa === null) return dismissSilently();
-    await self.registration.showNotification(`Hoa ${draw.hoa}`, {
-      body: formatDrawNotification(draw),
-      icon: 'icon-192.png',
-      tag: draw.drawAt // cùng kì thì thay noti cũ, không báo lại
-    });
-  })());
+  let message = { title: 'Có hoa', body: '' };
+  try {
+    message = event.data.json();
+  } catch (e) {
+    console.error(e);
+  }
+  event.waitUntil(self.registration.showNotification(message.title, {
+    body: message.body,
+    icon: 'icon-192.png',
+    tag: message.tag // cùng kì thì thay noti cũ, không báo lại
+  }));
 });
 
 self.addEventListener('notificationclick', (event) => {
