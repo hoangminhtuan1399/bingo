@@ -1,8 +1,5 @@
 const API_URL = 'https://api.vietlott-sms.vn/mobile-api/customerAccount/getStatisticGbingoResult';
 
-// Key KV lưu drawAt của kì hoa đã push gần nhất (cùng namespace với subscriptions)
-const LAST_NOTIFIED_KEY = 'meta:lastNotifiedDrawAt';
-
 const encoder = new TextEncoder();
 
 function b64u(input) {
@@ -124,14 +121,10 @@ export default {
   },
 
   async scheduled(event, env) {
-    // Chỉ push khi kì mới nhất ra hoa, mỗi kì chỉ push một lần
-    const draw = await fetchLatestDraw(env);
-    if (!draw || draw.hoa === null) return;
-    if (await env.SUBS.get(LAST_NOTIFIED_KEY) === draw.drawAt) return;
-    await env.SUBS.put(LAST_NOTIFIED_KEY, draw.drawAt);
-
+    // Không gọi API ở đây: Vietlott chặn IP ngoài Việt Nam mà cron chạy ở Singapore.
+    // Push rỗng, service worker trên máy người dùng tự gọi /latest rồi quyết định có hiện noti không
     const { keys } = await env.SUBS.list();
-    await Promise.all(keys.filter(({ name }) => name !== LAST_NOTIFIED_KEY).map(async ({ name }) => {
+    await Promise.all(keys.map(async ({ name }) => {
       const sub = JSON.parse(await env.SUBS.get(name));
       const res = await sendPush(sub, env);
       console.log(`push ${name.slice(0, 8)} -> ${res.status}`);
