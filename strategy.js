@@ -7,8 +7,9 @@ let simulation = null;
 // Mức cược nhỏ nhất (bội số BET_UNIT) sao cho nếu trúng thì bù được cost + chính tiền cược
 // VD: cost = 1.200.000 => 120 * buy >= 1.200.000 + buy => buy = 20.000
 // Không thấp hơn baseBet (cược ban đầu)
-function getBuy(cost, baseBet) {
-  const units = Math.ceil(cost / (HOA_PAYOUT - 1) / BET_UNIT);
+// Cost chung: kì đặt `count` suất cược thì 120 * buy >= cost + count * buy
+function getBuy(cost, baseBet, count = 1) {
+  const units = Math.ceil(cost / (HOA_PAYOUT - count) / BET_UNIT);
   return Math.max(baseBet, units * BET_UNIT);
 }
 
@@ -68,11 +69,67 @@ function createPlanPlanner({ windowSize, minGap, rounds }) {
   };
 }
 
+// "2,3,4" hoặc "2-4" => [2, 3, 4]; kì hoa = kì 0 nên bỏ qua giá trị < 1
+function parseOffsets(text) {
+  const offsets = [];
+  text.split(/[,;\s]+/).filter(Boolean).forEach((part) => {
+    const m = part.match(/^(\d+)(?:-(\d+))?$/);
+    if (!m) return;
+    const to = m[2] !== undefined ? parseInt(m[2]) : parseInt(m[1]);
+    for (let o = Math.max(1, parseInt(m[1])); o <= to; o++) if (!offsets.includes(o)) offsets.push(o);
+  });
+  return offsets;
+}
+
+// Chiến thuật C: hoa X ra ở kì i => tạo 1 đợt thử, cược X ở các kì i + offset (offset cấu hình riêng từng hoa).
+// X ra lại khi đợt thử còn chạy (về sớm) => tạo thêm đợt mới, đợt cũ giữ nguyên
+function createTrialPlanner({ trialOffsets, overlap }) {
+  const trials = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] }; // hoa => [kì bắt đầu đợt thử]
+  const maxOffset = (h) => Math.max(0, ...trialOffsets[h]);
+  let counts = {};
+  const stats = { created: 0, early: 0 };
+  return {
+    // Trả về { hoa: số đợt thử đang cược kì index }
+    targets(index) {
+      counts = {};
+      HOAS.forEach((h) => {
+        const n = trials[h].filter((start) => trialOffsets[h].includes(index - start)).length;
+        if (n) counts[h] = n;
+      });
+      return counts;
+    },
+    multiplier(h) {
+      return overlap === 'stack' ? counts[h] : 1;
+    },
+    update(index, hoa) {
+      if (hoa !== null && trialOffsets[hoa].length) {
+        // Còn đợt thử chưa cược hết => về sớm
+        if (trials[hoa].length) stats.early++;
+        trials[hoa].push(index);
+        stats.created++;
+      }
+      // Bỏ các đợt đã cược hết
+      HOAS.forEach((h) => { trials[h] = trials[h].filter((start) => start + maxOffset(h) > index); });
+    },
+    stats() {
+      return stats;
+    }
+  };
+}
+
+function createPlanner(settings) {
+  if (settings.strategy === 'plan') return createPlanPlanner(settings);
+  if (settings.strategy === 'trial') return createTrialPlanner(settings);
+  return createWindowPlanner(settings);
+}
+
 function simulate(draws, settings) {
   let { capital } = settings;
-  const { mode, baseBet, selectedHoas, stopLoss } = settings;
-  const planner = settings.strategy === 'plan' ? createPlanPlanner(settings) : createWindowPlanner(settings);
-  const cost = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
+  const { mode, baseBet, selectedHoas, stopLoss, sharedCost } = settings;
+  const planner = createPlanner(settings);
+  // Cost chung: tất cả các hoa dùng chung cost[0]
+  const cost = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
+  const costKey = (h) => (sharedCost ? 0 : h);
   const maxBet = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
   let maxTotal = { total: 0, index: null };
   let minCapital = { capital, index: null };
@@ -87,8 +144,15 @@ function simulate(draws, settings) {
     const gaps = planner.targets(index);
     let total = 0;
 
+    const multipliers = {};
     Object.keys(gaps).map(Number).filter((h) => selectedHoas.includes(h)).forEach((h) => {
-      bets[h] = mode === 'fixed' ? baseBet : getBuy(cost[h], baseBet);
+      multipliers[h] = planner.multiplier ? planner.multiplier(h) : 1;
+    });
+    // Cost chung: mức cược phải bù được cost chung + toàn bộ tiền đặt kì này
+    const count = sharedCost ? Object.values(multipliers).reduce((sum, m) => sum + m, 0) : 1;
+    Object.entries(multipliers).forEach(([key, multiplier]) => {
+      const h = parseInt(key);
+      bets[h] = (mode === 'fixed' ? baseBet : getBuy(cost[costKey(h)], baseBet, count)) * multiplier;
       total += bets[h];
       if (bets[h] > maxBet[h]) maxBet[h] = bets[h];
     });
@@ -97,21 +161,38 @@ function simulate(draws, settings) {
 
     capital -= total;
     let payout = 0;
-    Object.entries(bets).forEach(([key, buy]) => {
-      const h = parseInt(key);
-      if (h === hoa) {
+    if (sharedCost) {
+      if (bets[hoa] !== undefined) {
+        const buy = bets[hoa];
         payout = buy * HOA_PAYOUT;
-        const benefit = payout - cost[h] - buy;
-        wins.push({ index, drawAt, winningResult, hoa: h, cost: cost[h], buy, payout, benefit });
-        cost[h] = 0;
-      } else {
-        cost[h] += buy;
-        if (stopLoss > 0 && cost[h] > stopLoss) {
-          stopLosses.push({ index, drawAt, hoa: h, cost: cost[h] });
-          cost[h] = 0;
+        // Cost của lần trúng = cost chung + tiền đặt các hoa khác trong kì
+        const winCost = cost[0] + total - buy;
+        wins.push({ index, drawAt, winningResult, hoa, cost: winCost, buy, payout, benefit: payout - winCost - buy });
+        cost[0] = 0;
+      } else if (total) {
+        cost[0] += total;
+        if (stopLoss > 0 && cost[0] > stopLoss) {
+          stopLosses.push({ index, drawAt, hoa: null, cost: cost[0] });
+          cost[0] = 0;
         }
       }
-    });
+    } else {
+      Object.entries(bets).forEach(([key, buy]) => {
+        const h = parseInt(key);
+        if (h === hoa) {
+          payout = buy * HOA_PAYOUT;
+          const benefit = payout - cost[h] - buy;
+          wins.push({ index, drawAt, winningResult, hoa: h, cost: cost[h], buy, payout, benefit });
+          cost[h] = 0;
+        } else {
+          cost[h] += buy;
+          if (stopLoss > 0 && cost[h] > stopLoss) {
+            stopLosses.push({ index, drawAt, hoa: h, cost: cost[h] });
+            cost[h] = 0;
+          }
+        }
+      });
+    }
     capital += payout;
 
     if (capital < minCapital.capital) minCapital = { capital, index };
@@ -122,7 +203,8 @@ function simulate(draws, settings) {
     planner.update(index, hoa);
   });
 
-  return { rows, wins, stopLosses, maxBet, maxTotal, minCapital, bustIndex, finalCost: { ...cost } };
+  const trialStats = planner.stats ? planner.stats() : null;
+  return { rows, wins, stopLosses, maxBet, maxTotal, minCapital, bustIndex, trialStats, finalCost: { ...cost } };
 }
 
 function readSettings() {
@@ -134,7 +216,11 @@ function readSettings() {
     windowSize: parseInt(document.getElementById('window').value) || 36,
     threshold: parseInt(document.getElementById('threshold').value) || 216,
     unseen: document.getElementById('unseen').value,
+    trialOffsets: Object.fromEntries([...document.querySelectorAll('input[name="trial-offsets"]')]
+      .map((el) => [parseInt(el.dataset.hoa), parseOffsets(el.value)])),
+    overlap: document.getElementById('overlap').value,
     mode: document.getElementById('mode').value,
+    sharedCost: document.getElementById('cost-type').value === 'shared',
     stopLoss: parseInt(document.getElementById('stop-loss').value) || 0,
     selectedHoas: [...document.querySelectorAll('input[name="hoa"]:checked')].map((el) => parseInt(el.value)),
     // Làm tròn lên bội số BET_UNIT, tối thiểu 1 BET_UNIT
@@ -143,9 +229,10 @@ function readSettings() {
 }
 
 function toggleStrategyInputs() {
-  const plan = document.getElementById('strategy').value === 'plan';
-  document.querySelectorAll('.only-window').forEach((el) => { el.hidden = plan; });
-  document.querySelectorAll('.only-plan').forEach((el) => { el.hidden = !plan; });
+  const strategy = document.getElementById('strategy').value;
+  document.querySelectorAll('.controls [class*="only-"]').forEach((el) => {
+    el.hidden = !el.classList.contains(`only-${strategy}`);
+  });
 }
 
 async function runStrategy() {
@@ -190,7 +277,7 @@ function renderAll() {
 }
 
 function renderSummary() {
-  const { settings, rows, wins, stopLosses, maxTotal, minCapital, bustIndex } = simulation;
+  const { settings, rows, wins, stopLosses, maxTotal, minCapital, bustIndex, trialStats } = simulation;
   const stopLossTotal = stopLosses.reduce((sum, s) => sum + s.cost, 0);
   const last = rows[rows.length - 1];
   const profit = last.capital - settings.capital;
@@ -207,17 +294,20 @@ function renderSummary() {
     ['Tổng lớn nhất 1 kì', formatMoney(maxTotal.total), ''],
     ['Cháy vốn', bustIndex === null ? 'Không' : `Kì #${bustIndex} (${formatDate(rows[bustIndex].drawAt)})`, bustIndex === null ? '' : 'neg']
   ];
+  if (trialStats) tiles.push(['Số đợt thử (về sớm)', `${trialStats.created} (${trialStats.early})`, '']);
   document.getElementById('summary').innerHTML = tiles.map(([label, value, cls]) =>
     `<div class="tile"><div class="tile-label">${label}</div><div class="tile-value ${cls}">${value}</div></div>`
   ).join('');
 }
 
 function renderMaxTable() {
-  const { maxBet, maxTotal, rows, finalCost } = simulation;
+  const { maxBet, maxTotal, rows, finalCost, settings } = simulation;
   const head = HOAS.map((h) => `<th>Hoa ${h}</th>`).join('') + '<th>Tổng 1 kì</th>';
   const maxCells = HOAS.map((h) => `<td>${formatMoney(maxBet[h])}</td>`).join('') +
     `<td><b>${formatMoney(maxTotal.total)}</b>${maxTotal.index === null ? '' : `<div class="muted">kì #${maxTotal.index} · ${formatDate(rows[maxTotal.index].drawAt)}</div>`}</td>`;
-  const costCells = HOAS.map((h) => `<td>${formatMoney(finalCost[h])}</td>`).join('') + '<td></td>';
+  const costCells = settings.sharedCost
+    ? `<td colspan="${HOAS.length}" class="muted">Cost chung</td><td>${formatMoney(finalCost[0])}</td>`
+    : HOAS.map((h) => `<td>${formatMoney(finalCost[h])}</td>`).join('') + '<td></td>';
   document.getElementById('max-table').innerHTML =
     `<table><thead><tr><th></th>${head}</tr></thead><tbody>` +
     `<tr><th>Cược lớn nhất</th>${maxCells}</tr>` +

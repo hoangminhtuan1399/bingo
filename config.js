@@ -15,11 +15,7 @@ const fetchOffUrl = 'https://bingo18.top/data/data.json';
 // Nội dung noti kết quả, dùng chung cho sw.js và event.js
 function formatDrawNotification(draw) {
   if (!draw || !draw.winningResult) return 'Chưa có kết quả';
-  const gap = (value) => (value === null || value === undefined ? `≥${draw.total}` : value);
-  const lines = [String(draw.winningResult)];
-  if (draw.hoaGaps) {
-    lines.push(`Chưa ra hoa: ${gap(draw.hoaGap)} kì`);
-    lines.push([1, 2, 3, 4, 5, 6].map((h) => `${h}: ${gap(draw.hoaGaps[h])}`).join(' · '));
-  }
-  return lines.join('\n');
+  if (draw.hoa === null || draw.hoa === undefined) return `${draw.winningResult} (không phải hoa)`;
+  const gap = draw.prevHoaGap === null ? `≥${draw.total - 1}` : draw.prevHoaGap;
+  return `${draw.winningResult} - Hoa ${draw.hoa}\nChưa ra hoa trước đó: ${gap} kì`;
 }

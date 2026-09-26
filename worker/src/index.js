@@ -1,5 +1,8 @@
 const API_URL = 'https://api.vietlott-sms.vn/mobile-api/customerAccount/getStatisticGbingoResult';
 
+// Key KV lưu drawAt của kì hoa đã push gần nhất (cùng namespace với subscriptions)
+const LAST_NOTIFIED_KEY = 'meta:lastNotifiedDrawAt';
+
 const encoder = new TextEncoder();
 
 function b64u(input) {
@@ -45,19 +48,22 @@ function getHoa(winningResult) {
   return s[0] === s[1] && s[1] === s[2] ? parseInt(s[0]) : null;
 }
 
-// Số kì đã quay kể từ lần ra hoa gần nhất (0 = kì mới nhất là hoa).
-// null = chưa ra trong dữ liệu API trả về (ít nhất `total` kì)
-function getHoaGaps(draws) {
-  const hoaGaps = { 1: null, 2: null, 3: null, 4: null, 5: null, 6: null };
-  let hoaGap = null;
-  for (let i = draws.length - 1; i >= 0; i--) {
-    const hoa = getHoa(draws[i].winningResult);
-    if (hoa === null) continue;
-    const gap = draws.length - 1 - i;
-    if (hoaGap === null) hoaGap = gap;
-    if (hoaGaps[hoa] === null) hoaGaps[hoa] = gap;
+// Kì mới nhất có phải hoa không, và số kì chưa ra hoa trước đó
+// (VD hoa ở kì 100 và 180 -> 80). prevHoaGap = null nếu không thấy hoa trước đó
+// trong dữ liệu API trả về (ít nhất `total` kì)
+function getHoaInfo(draws) {
+  const last = draws.length - 1;
+  const hoa = getHoa(draws[last].winningResult);
+  let prevHoaGap = null;
+  if (hoa !== null) {
+    for (let i = last - 1; i >= 0; i--) {
+      if (getHoa(draws[i].winningResult) !== null) {
+        prevHoaGap = last - i;
+        break;
+      }
+    }
   }
-  return { hoaGap, hoaGaps, total: draws.length };
+  return { hoa, prevHoaGap, total: draws.length };
 }
 
 async function fetchLatestDraw(env) {
@@ -69,7 +75,7 @@ async function fetchLatestDraw(env) {
   const draws = (json.gbingoDraws || []).filter((d) => d.winningResult);
   if (!draws.length) return null;
   const { winningResult, drawAt } = draws[draws.length - 1];
-  return { winningResult, drawAt, ...getHoaGaps(draws) };
+  return { winningResult, drawAt, ...getHoaInfo(draws) };
 }
 
 function corsHeaders(env) {
@@ -118,8 +124,14 @@ export default {
   },
 
   async scheduled(event, env) {
+    // Chỉ push khi kì mới nhất ra hoa, mỗi kì chỉ push một lần
+    const draw = await fetchLatestDraw(env);
+    if (!draw || draw.hoa === null) return;
+    if (await env.SUBS.get(LAST_NOTIFIED_KEY) === draw.drawAt) return;
+    await env.SUBS.put(LAST_NOTIFIED_KEY, draw.drawAt);
+
     const { keys } = await env.SUBS.list();
-    await Promise.all(keys.map(async ({ name }) => {
+    await Promise.all(keys.filter(({ name }) => name !== LAST_NOTIFIED_KEY).map(async ({ name }) => {
       const sub = JSON.parse(await env.SUBS.get(name));
       const res = await sendPush(sub, env);
       console.log(`push ${name.slice(0, 8)} -> ${res.status}`);

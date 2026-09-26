@@ -22,6 +22,7 @@
                 <select id="strategy" onchange="toggleStrategyInputs()">
                     <option value="window">A: cược 36 kì sau mỗi hoa</option>
                     <option value="plan">B: hoa sau ≥ 90 kì hoa chung</option>
+                    <option value="trial">C: thử hoa sau mỗi hoa</option>
                 </select>
             </div>
             <div>
@@ -36,6 +37,13 @@
                 </select>
             </div>
             <div>
+                <label for="cost-type">Cost</label>
+                <select id="cost-type">
+                    <option value="per-hoa">Riêng từng hoa</option>
+                    <option value="shared">Chung tất cả các hoa</option>
+                </select>
+            </div>
+            <div>
                 <label for="base-bet">Cược ban đầu / hoa / kì</label>
                 <input type="number" id="base-bet" value="10000" step="10000" min="10000" />
             </div>
@@ -43,7 +51,7 @@
                 <label for="stop-loss">Cắt lỗ (cost &gt;, 0 = tắt)</label>
                 <input type="number" id="stop-loss" value="0" step="10000" min="0" />
             </div>
-            <div>
+            <div class="only-window only-plan">
                 <label for="window">Số kì sau hoa</label>
                 <input type="number" id="window" value="36" />
             </div>
@@ -66,6 +74,24 @@
                     <option value="skip">Bỏ qua</option>
                 </select>
             </div>
+            <div class="only-trial" hidden>
+                <label for="overlap">Kì trùng giữa các đợt</label>
+                <select id="overlap">
+                    <option value="once">Cược 1 lần</option>
+                    <option value="stack">Mỗi đợt cược riêng (cộng dồn)</option>
+                </select>
+            </div>
+            <div class="only-trial" hidden>
+                <span class="field-label">Kì thử của từng hoa (hoa = kì 0 · VD: 2,3,4 hoặc 5-7 · để trống = không thử)</span>
+                <div class="range-inputs">
+                    <label>1 <input type="text" name="trial-offsets" data-hoa="1" value="2,3,4" /></label>
+                    <label>2 <input type="text" name="trial-offsets" data-hoa="2" value="2,3,4" /></label>
+                    <label>3 <input type="text" name="trial-offsets" data-hoa="3" value="2,3,4" /></label>
+                    <label>4 <input type="text" name="trial-offsets" data-hoa="4" value="2,3,4" /></label>
+                    <label>5 <input type="text" name="trial-offsets" data-hoa="5" value="2,3,4" /></label>
+                    <label>6 <input type="text" name="trial-offsets" data-hoa="6" value="2,3,4" /></label>
+                </div>
+            </div>
             <div>
                 <span class="field-label">Hoa được cược</span>
                 <div class="hoa-checks">
@@ -84,8 +110,11 @@
         <p class="note">
             A: mỗi kì trong cửa sổ (số kì sau hoa, hoa mới thì đếm lại) đặt cho các hoa đã chọn có số kì chưa về &lt; ngưỡng.<br>
             B: hoa ra sau ≥ N kì hoa chung thì cược hoa đó trong K kì hoa tiếp theo; quá "số kì sau hoa" mà chưa có hoa thì dừng, chờ hoa tiếp theo (vẫn tính 1 kì hoa). Nhiều hoa có thể cược song song.<br>
+            C: hoa X ra ở kì i (kì 0) thì tạo 1 đợt thử: cược hoa X vào các kì thử cấu hình cho hoa X (VD 2,3,4 => kì i+2, i+3, i+4).
+            Hoa X ra lại khi đợt thử còn đang chạy (về sớm) thì tạo thêm đợt mới từ kì đó, đợt cũ vẫn giữ nguyên.<br>
             Gấp thếp: mức cược nhỏ nhất (bội số 10.000, không thấp hơn cược ban đầu) sao cho 120 × cược ≥ cost + cược. Cố định: luôn đặt đúng cược ban đầu.
-            Trượt thì cost += cược; trúng thì benefit = 120 × cược − cost − cược, cost về 0. Cost vượt mức cắt lỗ thì cũng về 0.
+            Trượt thì cost += cược; trúng thì benefit = 120 × cược − cost − cược, cost về 0. Cost vượt mức cắt lỗ thì cũng về 0.<br>
+            Cost chung: tiền đặt trượt của mọi hoa cộng vào 1 cost chung; kì đặt n hoa thì cược mỗi hoa sao cho 120 × cược ≥ cost chung + n × cược; trúng bất kì hoa nào thì cost chung về 0.
         </p>
         <div id="status"></div>
 
