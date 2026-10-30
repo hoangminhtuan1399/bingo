@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: bingo-backend
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: TURSO_DATABASE_URL
+        sync: false
+      - key: TURSO_AUTH_TOKEN
+        sync: false
+      - key: SYNC_TOKEN
+        sync: false
+      - key: ALLOWED_ORIGINS
+        value: https://hoangminhtuan1399.github.io

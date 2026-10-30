@@ -24,6 +24,31 @@ function handleGetOfflineTriple() {
   });
 }
 
+// Lấy kết quả online (gọi từ máy người dùng vì Vietlott chặn IP ngoài VN) rồi gửi backend thêm kì mới vào DB
+async function handleSyncOnline() {
+  try {
+    const json = await (await fetch(fetchUrl, fetchOptions)).json();
+    const body = JSON.stringify({ gbingoDraws: json.gbingoDraws });
+    const post = (token) => fetch(syncUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...(token && { 'X-Sync-Token': token }) },
+      body
+    });
+    let token = localStorage.getItem('syncToken') || '';
+    let res = await post(token);
+    if (res.status === 401) {
+      // Backend yêu cầu SYNC_TOKEN: hỏi một lần rồi nhớ trong trình duyệt
+      token = prompt('Sync token:') || '';
+      res = await post(token);
+      if (res.ok) localStorage.setItem('syncToken', token);
+    }
+    displayResult(await res.json());
+  } catch (e) {
+    console.error(e);
+    displayResult({ error: e.message });
+  }
+}
+
 function handleGetOnlineTotal() {
   const arr = getValues();
   fetch(fetchUrl, fetchOptions).then(res => res.json()).then(json => {
