@@ -10,7 +10,10 @@ const fetchOptions = {
 
 const fetchUrl = 'https://api.vietlott-sms.vn/mobile-api/customerAccount/getStatisticGbingoResult';
 
-const fetchOffUrl = 'https://bingo18.top/data/data.json';
+const fetchOffUrl = 'https://bingo-backend-roz7.onrender.com/data.json';
+
+// Backend local (server/server.mjs): nhận kì mới từ API online để thêm vào DB
+const syncUrl = 'https://bingo-backend-roz7.onrender.com/sync';
 
 function getHoa(winningResult) {
   const s = String(winningResult);
